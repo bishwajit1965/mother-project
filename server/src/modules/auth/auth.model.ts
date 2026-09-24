@@ -29,6 +29,17 @@ const userSchema = new Schema<IUser, UserModel>(
       default: USER_STATUS.ACTIVE,
     },
 
+    avatar: {
+      type: String,
+      default: "",
+    },
+
+    bio: {
+      type: String,
+      maxlength: 500,
+      default: null,
+    },
+
     isDeleted: { type: Boolean, default: false },
   },
   { timestamps: true },
