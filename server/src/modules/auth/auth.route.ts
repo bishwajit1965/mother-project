@@ -1,16 +1,28 @@
 import { Router } from "express";
-
 import { User } from "./auth.model.js";
 import { AuthController } from "./auth.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import authorize from "../../middlewares/authorize.js";
 import { USER_ROLE } from "./auth.constant.js";
+import validateRequest from "../../middlewares/validateRequest.js";
+import {
+  registerValidationSchema,
+  loginValidationSchema,
+} from "./auth.validation.js";
 
 const router = Router();
 
-router.post("/register", AuthController.registerUser);
+router.post(
+  "/register",
+  validateRequest(registerValidationSchema),
+  AuthController.registerUser,
+);
 
-router.post("/login", AuthController.loginUser);
+router.post(
+  "/login",
+  validateRequest(loginValidationSchema),
+  AuthController.loginUser,
+);
 
 router.post("/refresh-token", AuthController.refreshToken);
 

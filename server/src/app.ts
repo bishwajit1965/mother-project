@@ -5,10 +5,15 @@ import morgan from "morgan";
 import globalErrorHandler from "./errors/globalErrorHandler.js";
 import moduleRoutes from "./modules";
 import cookieParser from "cookie-parser";
+import swaggerUi from "swagger-ui-express";
+
+import { swaggerSpec } from "./configs/swagger.js";
 
 const app = express();
 
 app.use(express.json());
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use(cors());
 

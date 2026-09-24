@@ -3,6 +3,7 @@ import { User } from "./auth.model.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import createToken from "../../utils/createToken.js";
 import AppError from "../../errors/AppError.js";
+import { USER_STATUS } from "./auth.constant.js";
 
 const registerUserService = async (payload: {
   name: string;
@@ -36,6 +37,10 @@ const loginUserService = async (payload: {
 
   if (!user) {
     throw new AppError(404, "User not found");
+  }
+
+  if (user.status === USER_STATUS.BLOCKED) {
+    throw new AppError(403, "User is blocked");
   }
 
   const passwordMatched = await bcrypt.compare(payload.password, user.password);
