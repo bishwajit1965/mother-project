@@ -1,0 +1,23 @@
+# logs
+logs
+*.log
+
+# env
+.env
+.env.*
+
+# dependencies
+node_modules
+
+# build
+dist
+build
+
+# coverage
+coverage
+
+# vscode
+.vscode
+
+# mac
+.DS_Store
