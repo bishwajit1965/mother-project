@@ -66,10 +66,12 @@ const blockUserService = async (id: string) => {
     id,
     { status: USER_STATUS.BLOCKED },
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     },
-  ).select("_id name email avatar bio role status createdAt updatedAt");
+  ).select(
+    "_id name email avatar bio role status isDeleted createdAt updatedAt",
+  );
 
   return blockedUser;
 };
@@ -88,10 +90,12 @@ const softDeleteUserService = async (id: string) => {
     id,
     { isDeleted: true },
     {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     },
-  ).select("_id name email avatar bio role status createdAt updatedAt");
+  ).select(
+    "_id name email avatar bio role status isDeleted createdAt updatedAt",
+  );
 
   return softDeletedUser;
 };

@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import verifyToken from "../utils/verifyToken.js";
 
 import AppError from "../errors/AppError";
 
@@ -16,7 +17,12 @@ const authMiddleware = (req: Request, _res: Response, next: NextFunction) => {
     throw new AppError(401, "You are not authorized");
   }
 
-  const decoded = jwt.verify(
+  // const decoded = jwt.verify(
+  //   bearerToken,
+  //   process.env.JWT_ACCESS_SECRET as string,
+  // );
+
+  const decoded = verifyToken(
     bearerToken,
     process.env.JWT_ACCESS_SECRET as string,
   );
