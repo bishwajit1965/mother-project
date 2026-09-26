@@ -1,6 +1,7 @@
 import { createClient } from "redis";
+
 // Resolves the undefined typing issue by establishing a local fallback
-const redisUrl = process.env.REDIS_URI;
+const redisUrl = process.env.REDIS_URI || "redis://127.0.0.1:6379";
 
 if (!redisUrl) {
   throw new Error("REDIS_URL is not defined");

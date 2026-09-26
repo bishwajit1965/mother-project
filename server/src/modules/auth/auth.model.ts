@@ -29,6 +29,11 @@ const userSchema = new Schema<IUser, UserModel>(
       default: USER_STATUS.ACTIVE,
     },
 
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
     avatar: {
       type: String,
       default: "",

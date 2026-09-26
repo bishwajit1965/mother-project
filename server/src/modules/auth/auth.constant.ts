@@ -7,3 +7,5 @@ export const USER_STATUS = {
   ACTIVE: "ACTIVE",
   BLOCKED: "BLOCKED",
 } as const;
+
+export const OTP_EXPIRES_IN = 300;

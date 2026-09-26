@@ -20,6 +20,7 @@ export interface IUser {
   bio: string;
   status: TUserStatus;
   isDeleted: boolean;
+  isVerified: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }

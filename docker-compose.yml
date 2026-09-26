@@ -1,0 +1,44 @@
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+
+    container_name: mother-project-server
+
+    ports:
+      - "3000:3000"
+
+    env_file:
+      - ./server/.env.docker
+
+    # ENVIRONMENT VARIABLES CAN BE ADDED THIS WAY ALSO BUT IT IS A BAD PRACTICE TO EXPOSE IT HERE
+    # environment:
+      # PORT: 3000
+      # MONGO_URI: mongodb://mongo:27017/mother-project
+      # MONGO_URI: mongodb+srv://core_project_admin:zSKomgvFoQg3UP3h@cluster0.rlnqmfs.mongodb.net/mother-project?retryWrites=true&w=majority&appName=Cluster0
+      # JWT_ACCESS_SECRET: ea2bf841c9436fa1e6970d30f7a9f28c095285f5169421ecfe73042f6fc8587bb98a3a040241f6745132777b3659d0c2d3321a6ea2f3c196510530a733f4da97
+      # JWT_ACCESS_EXPIRES_IN: 15m
+      # JWT_REFRESH_SECRET: 317c99a66ae477ab6576a79f94e5dbfc34e28f5568d6e16b22d91cf8d810c0fe798c9c11c04d3416bf5afa7be20e2e4454fb0cb1ebbcf13408ba556ea7fa92f7
+      # JWT_REFRESH_EXPIRES_IN: 7d
+
+    depends_on:
+      - mongo
+      - redis
+
+  mongo:
+    image: mongo:latest
+    container_name: mother-project-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:latest
+    container_name: mother_project_redis
+    ports:
+     - "6379:6379"
+
+volumes:
+  mongo_data:

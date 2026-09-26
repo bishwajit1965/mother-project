@@ -9,6 +9,7 @@ import {
   registerValidationSchema,
   loginValidationSchema,
 } from "./auth.validation.js";
+import { redisClient } from "../../database/redis.js";
 
 const router = Router();
 
@@ -45,6 +46,16 @@ router.get(
   },
 );
 
+router.post("/verify-email", AuthController.verifyEmail);
+
+router.post("/send-otp", AuthController.sendOTP);
+
+router.post("/verify-otp", AuthController.verifyOTP);
+
+router.post("/forgot-password", AuthController.forgotPassword);
+
+router.patch("/reset-password", AuthController.resetPassword);
+
 router.post("/logout", AuthController.logout);
 
 router.get("/health", (_req, res) => {
@@ -52,6 +63,12 @@ router.get("/health", (_req, res) => {
     success: true,
     message: "Auth module healthy",
   });
+});
+
+router.get("/redis-test", async (_req, res) => {
+  await redisClient.set("boss", "Bishwajit");
+  const value = await redisClient.get("boss");
+  res.json({ success: true, value });
 });
 
 export default router;
