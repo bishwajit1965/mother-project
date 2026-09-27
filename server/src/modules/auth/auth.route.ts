@@ -48,6 +48,11 @@ router.get(
 
 router.post("/verify-email", AuthController.verifyEmail);
 
+router.post(
+  "/resend-verification-email",
+  AuthController.resendEmailVerificationOTP,
+);
+
 router.post("/send-otp", AuthController.sendOTP);
 
 router.post("/verify-otp", AuthController.verifyOTP);

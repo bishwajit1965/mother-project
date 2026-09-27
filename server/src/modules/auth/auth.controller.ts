@@ -32,6 +32,17 @@ const verifyEmail = catchAsync(async (req, res) => {
   });
 });
 
+const resendEmailVerificationOTP = catchAsync(async (req, res) => {
+  await AuthService.resendEmailVerificationOTPService(req.body.email);
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Email verification OTP is sent. Check mail.",
+    data: null,
+  });
+});
+
 const loginUser = catchAsync(async (req, res) => {
   const result = await AuthService.loginUserService(req.body);
 
@@ -145,9 +156,20 @@ const resetPassword = catchAsync(async (req, res) => {
   });
 });
 
+const resendForgotPasswordOTP = catchAsync(async (req, res) => {
+  await AuthService.resendForgotPasswordOTPService(req.body.email);
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Password reset email resent, Check mail",
+    data: null,
+  });
+});
+
 export const AuthController = {
   registerUser,
   verifyEmail,
+  resendEmailVerificationOTP,
   loginUser,
   getMe,
   refreshToken,
@@ -156,4 +178,5 @@ export const AuthController = {
   verifyOTP,
   forgotPassword,
   resetPassword,
+  resendForgotPasswordOTP,
 };

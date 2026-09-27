@@ -67,6 +67,23 @@ const verifyEmailService = async (email: string, otp: string) => {
   return null;
 };
 
+const resendEmailVerificationOTPService = async (email: string) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+  if (user.isVerified) {
+    throw new AppError(400, "Email is verified already");
+  }
+  const otp = generateOTP();
+
+  await redisClient.set(`verify:${user.email}`, otp, { EX: OTP_EXPIRES_IN });
+
+  await sendOTPEmail(user.email, otp);
+
+  return null;
+};
+
 const loginUserService = async (payload: {
   email: string;
   password: string;
@@ -234,13 +251,25 @@ const resetPasswordService = async (email: string, newPassword: string) => {
   return null;
 };
 
+const resendForgotPasswordOTPService = async (email: string) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new AppError(400, "User not found");
+  }
+
+  await sendOTPService(email);
+  return null;
+};
+
 export const AuthService = {
   registerUserService,
   verifyEmailService,
+  resendEmailVerificationOTPService,
   loginUserService,
   refreshTokenService,
   sendOTPService,
   verifyOTPService,
   forgotPasswordService,
   resetPasswordService,
+  resendForgotPasswordOTPService,
 };
