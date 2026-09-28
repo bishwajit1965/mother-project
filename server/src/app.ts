@@ -25,6 +25,7 @@ app.use(morgan("dev"));
 app.use(cookieParser());
 
 app.use("/api/v1", moduleRoutes);
+
 console.log("APP TS LOADED - BOSS TEST");
 
 app.get("/", (_req, res) => {

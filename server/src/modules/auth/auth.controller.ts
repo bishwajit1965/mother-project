@@ -79,19 +79,6 @@ const loginUser = catchAsync(async (req, res) => {
 });
 
 /**===========================================
- * GET CURRENT LOGGED-IN USER
- *============================================
- */
-const getMe = catchAsync(async (req, res) => {
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "User fetched successfully",
-    data: req.user!,
-  });
-});
-
-/**===========================================
  * REFRESH ACCESS TOKEN - 005
  =============================================
  */
@@ -108,32 +95,6 @@ const refreshToken = catchAsync(async (req, res) => {
     success: true,
     message: "Access token refreshed successfully.",
     data: result,
-  });
-});
-
-/**===========================================
- *  LOGOUT USER
- * ===========================================
- */
-const logout = catchAsync(async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
-  if (!refreshToken) {
-    throw new AppError(401, "Refresh token not found");
-  }
-  const decoded = verifyToken(
-    refreshToken,
-    process.env.JWT_REFRESH_SECRET!,
-  ) as JwtPayload;
-
-  await redisClient.del(`refresh:${decoded.userId}`);
-
-  res.clearCookie("refreshToken");
-
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Logged Out successfully.",
-    data: null,
   });
 });
 
@@ -234,18 +195,57 @@ const resendForgotPasswordOTP = catchAsync(async (req, res) => {
   });
 });
 
+/**===========================================
+ * GET CURRENT LOGGED-IN USER **
+ *============================================
+ */
+const getMe = catchAsync(async (req, res) => {
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User fetched successfully",
+    data: req.user!,
+  });
+});
+
+/**===========================================
+ *  LOGOUT USER **
+ * ===========================================
+ */
+const logout = catchAsync(async (req, res) => {
+  const refreshToken = req.cookies.refreshToken;
+  if (!refreshToken) {
+    throw new AppError(401, "Refresh token not found");
+  }
+  const decoded = verifyToken(
+    refreshToken,
+    process.env.JWT_REFRESH_SECRET!,
+  ) as JwtPayload;
+
+  await redisClient.del(`refresh:${decoded.userId}`);
+
+  res.clearCookie("refreshToken");
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Logged Out successfully.",
+    data: null,
+  });
+});
+
 export const AuthController = {
   registerUser,
   verifyEmail,
   resendEmailVerificationOTP,
   loginUser,
-  getMe,
   refreshToken,
-  logout,
   sendOTP,
   verifyOTP,
   forgotPassword,
   changePassword,
   resetPassword,
   resendForgotPasswordOTP,
+  getMe,
+  logout,
 };
