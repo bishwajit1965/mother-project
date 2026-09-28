@@ -90,11 +90,18 @@ const refreshToken = catchAsync(async (req, res) => {
   }
   const result = await AuthService.refreshTokenService(token);
 
+  // Rotates refresh token
+  res.cookie("refreshToken", result.refreshToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax",
+  });
+
   sendResponse(res, {
     statusCode: 200,
     success: true,
     message: "Access token refreshed successfully.",
-    data: result,
+    data: result.accessToken,
   });
 });
 

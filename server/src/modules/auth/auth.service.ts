@@ -3,15 +3,19 @@ import { User } from "./auth.model.js";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import createToken from "../../utils/createToken.js";
 import AppError from "../../errors/AppError.js";
-import { OTP_EXPIRES_IN, USER_STATUS } from "./auth.constant.js";
+import {
+  MAX_LOGIN_ATTEMPTS,
+  OTP_EXPIRES_IN,
+  USER_STATUS,
+} from "./auth.constant.js";
 import { redisClient } from "../../database/redis.js";
 import verifyToken from "../../utils/verifyToken.js";
 import { generateOTP } from "../../utils/generateOTP.js";
 import { sendOTPEmail } from "../../utils/sendOTPEmail.js";
 
-/**
+/**================================
  * USER REGISTRATION SERVICE - 001
- * ===============================
+ * ================================
  * Flow:
  * 1. Check if user already exists
  * 2. Hash password
@@ -53,9 +57,9 @@ const registerUserService = async (payload: {
   return result;
 };
 
-/**
+/**================================
  * EMAIL VERIFICATION SERVICE -002
- * ===============================
+ * ================================
  * Flow:
  * 1. Find user
  * 2. Verify OTP
@@ -93,7 +97,7 @@ const verifyEmailService = async (email: string, otp: string) => {
   return null;
 };
 
-/**
+/**===============================================
  * RESEND EMAIL WITH OTP ON REQUEST BY USER - 003
  * ===============================================
  * Flow:
@@ -126,20 +130,21 @@ const resendEmailVerificationOTPService = async (email: string) => {
   return null;
 };
 
-/**
+/**=========================
  * LOGIN SERVICE - 004
  * =========================
  * Flow:
  * 1. Check user existence
  * 2. Check account status
  * 3. Check email verification
- * 4. Verify password
- * 5. Generate tokens
- * 6. Store refresh token in Redis
+ * 4. Redis-based login rate limiting.
+ * 5. After 5 failed attempts, login is blocked
+ * 5. Verify password
+ * 6. for 15 minutes to prevent brute-force attacks.
+ * 7. Generate tokens
+ * 8. Store refresh token in Redis
  *
  * @payload login credentials
- * @param email user email
- * @param password user password
  * @returns access and refresh tokens
  */
 const loginUserService = async (payload: {
@@ -162,9 +167,25 @@ const loginUserService = async (payload: {
     throw new AppError(403, "Please verify your email address.");
   }
 
+  // Redis-based login rate limiting.
+  const attempts = await redisClient.get(`login-fails:${payload.email}`);
+
+  // After 5 failed attempts, login is blocked
+  if (Number(attempts) >= MAX_LOGIN_ATTEMPTS) {
+    throw new AppError(
+      429,
+      "Too many failed login attempts. Please try again after 15 minutes.",
+    );
+  }
+
   const passwordMatched = await bcrypt.compare(payload.password, user.password);
 
   if (!passwordMatched) {
+    const failCount = await redisClient.incr(`login-fails:${payload.email}`);
+    // for 15 minutes to prevent brute-force attacks.
+    if (failCount === 1) {
+      await redisClient.expire(`login-fails:${payload.email}`, 900);
+    }
     throw new AppError(401, "Password does not match");
   }
 
@@ -188,11 +209,12 @@ const loginUserService = async (payload: {
 
   await redisClient.set(`refresh:${user._id}`, refreshToken, {
     EX: Number(process.env.REDIS_REFRESH_TOKEN_EXPIRES_IN),
-    // EX: 60 * 60 * 24 * 30,
   });
 
   const storedToken = await redisClient.get(`refresh:${user._id}`);
   console.log("Stored Refresh Token:", storedToken);
+
+  await redisClient.del(`login-fails:${payload.email}`);
 
   return {
     accessToken,
@@ -200,16 +222,28 @@ const loginUserService = async (payload: {
   };
 };
 
-/**
- * REFRESH TOKEN SERVICE - 005
- * ============================
+/**=======================================
+ * REFRESH TOKEN (ROTATION) SERVICE - 005
+ * =======================================
+ * NOTE:
+ * Refresh Token Rotation improves security by generating
+ * a new refresh token whenever a refresh request is made.
+ *
+ * The previous refresh token becomes invalid immediately.
+ * Therefore, an attacker cannot generate new access tokens
+ * using an old or stolen refresh token.
+ *
  * Flow:
- * 1. Checks if token is missing
- * 2. Decodes and verifies token
- * 3. Fetches token form Redis
- * 4. Validates both the token Redis & HttpOnly
- * 5. Create a new JWT payload
-6. 6. Generate a new access token
+ * 1. Verify incoming refresh token
+ * 2. Match refresh token with Redis
+ * 3. Generate new access token
+ * 4. Generate new refresh token
+ * 5. Replace old refresh token in Redis
+ * 6. Return both tokens
+ *
+ * Security:
+ * - Old refresh token becomes invalid immediately.
+ * - Refresh token reuse is prevented.
  *
  * @param token
  * @returns new JWT token verifying with refresh token stored
@@ -251,11 +285,22 @@ const refreshTokenService = async (token: string) => {
     process.env.JWT_ACCESS_EXPIRES_IN as jwt.SignOptions["expiresIn"],
   );
 
+  const refreshToken = createToken(
+    jwtPayload,
+    process.env.JWT_REFRESH_SECRET as string,
+    process.env.JWT_REFRESH_EXPIRES_IN as jwt.SignOptions["expiresIn"],
+  );
+
+  // Replace old refresh token with newly generated one
+  await redisClient.set(`refresh:${decoded.userId}`, refreshToken, {
+    EX: Number(process.env.REDIS_REFRESH_TOKEN_EXPIRES_IN),
+  });
+
   // Step 6: Return token
-  return accessToken;
+  return { accessToken, refreshToken };
 };
 
-/**
+/**==========================
  * SENDING OTP SERVICE - 006
  * ==========================
  * Flow:
@@ -285,9 +330,9 @@ const sendOTPService = async (email: string) => {
   return result;
 };
 
-/**
+/**============================
  * VERIFYING OTP SERVICE - 007
- * ===========================
+ * ============================
  * Flow:
  * 1. Fetches user
  * 2. Fetches OTP from Redis
@@ -325,9 +370,9 @@ const verifyOTPService = async (email: string, otp: string) => {
   return null;
 };
 
-/**
+/**==============================
  * FORGOT PASSWORD SERVICE - 008
- * =============================
+ * ==============================
  * Flow:
  * 1. Password forgotten
  * 2. Fetched user by email
@@ -353,9 +398,9 @@ const forgotPasswordService = async (email: string) => {
   return null;
 };
 
-/**
+/**=============================
  * RESET PASSWORD SERVICE - 009
- * ============================
+ * =============================
  * Flow:
  * 1. Find user by email
  * 2. Verify OTP verification ticket from Redis
@@ -395,9 +440,9 @@ const resetPasswordService = async (email: string, newPassword: string) => {
   return null;
 };
 
-/**
+/**==============================
  * CHANGE PASSWORD SERVICE - 010
- * =============================
+ * ==============================
  * Flow:
  * 1. Logged in user can change password
  * 2. User is fetched by logged in userId and selects the password
@@ -445,9 +490,9 @@ const changePasswordService = async (
   return null;
 };
 
-/**
+/**=========================================
  * RESEND FORGOT PASSWORD OTP SERVICE - 011
- * ========================================
+ * =========================================
  * Flow:
  * 1. Verify that the user exists
  * 2. Generate a new OTP

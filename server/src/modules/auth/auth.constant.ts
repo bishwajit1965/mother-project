@@ -9,3 +9,5 @@ export const USER_STATUS = {
 } as const;
 
 export const OTP_EXPIRES_IN = 300;
+
+export const MAX_LOGIN_ATTEMPTS = 5;
