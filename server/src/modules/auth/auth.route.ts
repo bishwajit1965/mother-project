@@ -59,6 +59,8 @@ router.post("/verify-otp", AuthController.verifyOTP);
 
 router.post("/forgot-password", AuthController.forgotPassword);
 
+router.patch("/change-password", authMiddleware, AuthController.changePassword);
+
 router.patch("/reset-password", AuthController.resetPassword);
 
 router.post("/logout", AuthController.logout);

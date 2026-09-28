@@ -9,6 +9,20 @@ import verifyToken from "../../utils/verifyToken.js";
 import { generateOTP } from "../../utils/generateOTP.js";
 import { sendOTPEmail } from "../../utils/sendOTPEmail.js";
 
+/**
+ * USER REGISTRATION SERVICE - 001
+ * ===============================
+ * Flow:
+ * 1. Check if user already exists
+ * 2. Hash password
+ * 3. Create user
+ * 4. Generate verification OTP
+ * 5. Store OTP in Redis
+ * 6. Send verification email
+ *
+ * @param payload User registration information
+ * @returns Newly created user
+ */
 const registerUserService = async (payload: {
   name: string;
   email: string;
@@ -39,6 +53,18 @@ const registerUserService = async (payload: {
   return result;
 };
 
+/**
+ * EMAIL VERIFICATION SERVICE -002
+ * ===============================
+ * Flow:
+ * 1. Find user
+ * 2. Verify OTP
+ * 3. Mark account as verified
+ * 4. Remove OTP from Redis
+ *
+ * @param email User email
+ * @param otp Verification OTP
+ */
 const verifyEmailService = async (email: string, otp: string) => {
   const user = await User.findOne({
     email,
@@ -67,6 +93,22 @@ const verifyEmailService = async (email: string, otp: string) => {
   return null;
 };
 
+/**
+ * RESEND EMAIL WITH OTP ON REQUEST BY USER - 003
+ * ===============================================
+ * Flow:
+ * 1. User signs up & OTP is sent for email verification
+ * 2. For some reason user does not verify email & can not log in
+ * 3. User then can send email verification request
+ * 4. Checks if email is verified
+ * 5. If verification is confirmed no email is sent
+ * 6. Otherwise generates OTP
+ * 7. OTP is saved in Redis
+ * 8. Then email is sent with OTP
+ *
+ * @param email
+ * @returns null -> no data
+ */
 const resendEmailVerificationOTPService = async (email: string) => {
   const user = await User.findOne({ email });
   if (!user) {
@@ -84,6 +126,22 @@ const resendEmailVerificationOTPService = async (email: string) => {
   return null;
 };
 
+/**
+ * LOGIN SERVICE - 004
+ * =========================
+ * Flow:
+ * 1. Check user existence
+ * 2. Check account status
+ * 3. Check email verification
+ * 4. Verify password
+ * 5. Generate tokens
+ * 6. Store refresh token in Redis
+ *
+ * @payload login credentials
+ * @param email user email
+ * @param password user password
+ * @returns access and refresh tokens
+ */
 const loginUserService = async (payload: {
   email: string;
   password: string;
@@ -142,6 +200,20 @@ const loginUserService = async (payload: {
   };
 };
 
+/**
+ * REFRESH TOKEN SERVICE - 005
+ * ============================
+ * Flow:
+ * 1. Checks if token is missing
+ * 2. Decodes and verifies token
+ * 3. Fetches token form Redis
+ * 4. Validates both the token Redis & HttpOnly
+ * 5. Create a new JWT payload
+6. 6. Generate a new access token
+ *
+ * @param token
+ * @returns new JWT token verifying with refresh token stored
+ */
 const refreshTokenService = async (token: string) => {
   // Step 1: Check if token exists
   if (!token) {
@@ -183,6 +255,18 @@ const refreshTokenService = async (token: string) => {
   return accessToken;
 };
 
+/**
+ * SENDING OTP SERVICE - 006
+ * ==========================
+ * Flow:
+ * 1. Fetches user by email
+ * 2. Generates OTP
+ * 3. Sets OTP to Redis with expiry limit
+ * 4. Sends OTP email
+ *
+ * @param email
+ * @returns the expected email with OTP
+ */
 const sendOTPService = async (email: string) => {
   const user = await User.findOne({ email });
 
@@ -201,6 +285,20 @@ const sendOTPService = async (email: string) => {
   return result;
 };
 
+/**
+ * VERIFYING OTP SERVICE - 007
+ * ===========================
+ * Flow:
+ * 1. Fetches user
+ * 2. Fetches OTP from Redis
+ * 3. Verifies if stored OTP === OTP received from user
+ * 4. Creates a temporary password-reset verification ticket in Redis
+ * 5. Deletes old otp
+ *
+ * @param email
+ * @param otp
+ * @returns (null === no data ) -> expected result
+ */
 const verifyOTPService = async (email: string, otp: string) => {
   const user = await User.findOne({ email });
 
@@ -218,11 +316,27 @@ const verifyOTPService = async (email: string, otp: string) => {
     throw new AppError(400, "Invalid OTP");
   }
 
+  await redisClient.set(`reset:${user.email}`, "verified", {
+    EX: OTP_EXPIRES_IN,
+  });
+
   await redisClient.del(`otp:${user.email}`);
 
   return null;
 };
 
+/**
+ * FORGOT PASSWORD SERVICE - 008
+ * =============================
+ * Flow:
+ * 1. Password forgotten
+ * 2. Fetched user by email
+ * 3. Checked if isVerified true / false
+ * 4. If not verified OTO is sent
+ *
+ * @param email user email
+ * @returns (null === no data ) -> expected result
+ */
 const forgotPasswordService = async (email: string) => {
   const user = await User.findOne({ email });
 
@@ -239,20 +353,117 @@ const forgotPasswordService = async (email: string) => {
   return null;
 };
 
+/**
+ * RESET PASSWORD SERVICE - 009
+ * ============================
+ * Flow:
+ * 1. Find user by email
+ * 2. Verify OTP verification ticket from Redis
+ * 3. Hash the new password
+ * 4. Update user's password
+ * 5. Remove the Redis verification ticket
+ *
+ * Security:
+ * - Password reset is only allowed after successful OTP verification.
+ * - The Redis verification ticket acts as temporary authorization.
+ * - The verification ticket is deleted after a successful reset to prevent reuse.
+ *
+ * @param email User email address
+ * @param newPassword New password provided by the user
+ * @returns null
+ */
 const resetPasswordService = async (email: string, newPassword: string) => {
   const user = await User.findOne({ email });
   if (!user) {
     throw new AppError(404, "User not found");
   }
 
+  const verified = await redisClient.get(`reset:${email}`);
+
+  if (!verified) {
+    throw new AppError(403, "OTP verification needed");
+  }
+
   const hashedPassword = await bcrypt.hash(newPassword, 10);
+
   user.password = hashedPassword;
+
   await user.save();
+
+  await redisClient.del(`reset:${email}`);
+
   return null;
 };
 
+/**
+ * CHANGE PASSWORD SERVICE - 010
+ * =============================
+ * Flow:
+ * 1. Logged in user can change password
+ * 2. User is fetched by logged in userId and selects the password
+ * 3. Current password and new password are compared
+ * 4. Current password verified
+ * 5. New password is hashed
+ * 6. If not same new password is saved in MongoDB
+ * 7. New password is saved
+ *
+ * @param userId logged in user userId
+ * @param currentPassword existing password
+ * @param newPassword password to be set
+ * @returns null
+ */
+const changePasswordService = async (
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) => {
+  const user = await User.findById(userId).select("+password");
+
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  const matched = await bcrypt.compare(currentPassword, user.password);
+
+  if (!matched) {
+    throw new AppError(401, "Current password is incorrect");
+  }
+
+  if (currentPassword === newPassword) {
+    throw new AppError(
+      400,
+      "New password must be different from the current password.",
+    );
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  user.password = hashedPassword;
+
+  await user.save();
+
+  return null;
+};
+
+/**
+ * RESEND FORGOT PASSWORD OTP SERVICE - 011
+ * ========================================
+ * Flow:
+ * 1. Verify that the user exists
+ * 2. Generate a new OTP
+ * 3. Store the OTP in Redis
+ * 4. Send the OTP via email
+ *
+ * Note:
+ * - Reuses sendOTPService() to avoid duplicate OTP generation logic.
+ * - The newly generated OTP replaces the previous OTP.
+ *
+ * @param email User email address
+ * @returns null
+ */
 const resendForgotPasswordOTPService = async (email: string) => {
   const user = await User.findOne({ email });
+
   if (!user) {
     throw new AppError(400, "User not found");
   }
@@ -271,5 +482,6 @@ export const AuthService = {
   verifyOTPService,
   forgotPasswordService,
   resetPasswordService,
+  changePasswordService,
   resendForgotPasswordOTPService,
 };

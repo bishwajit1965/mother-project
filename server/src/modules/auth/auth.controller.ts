@@ -8,6 +8,10 @@ import verifyToken from "../../utils/verifyToken.js";
 
 import { AuthService } from "./auth.service.js";
 
+/**================================================
+ * REGISTERS / SIGNS UP A USER - 001
+ * ================================================
+ */
 const registerUser = catchAsync(async (req, res) => {
   const result = await AuthService.registerUserService(req.body);
 
@@ -19,6 +23,10 @@ const registerUser = catchAsync(async (req, res) => {
   });
 });
 
+/**===============================================
+ * VERIFIES REGISTERED/SIGNED UP USER EMAIL - 002
+ * ===============================================
+ */
 const verifyEmail = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
 
@@ -32,6 +40,10 @@ const verifyEmail = catchAsync(async (req, res) => {
   });
 });
 
+/**=============================================
+ * RESEND EMAIL VERIFICATION OTP - 003
+ * =============================================
+ */
 const resendEmailVerificationOTP = catchAsync(async (req, res) => {
   await AuthService.resendEmailVerificationOTPService(req.body.email);
 
@@ -43,6 +55,10 @@ const resendEmailVerificationOTP = catchAsync(async (req, res) => {
   });
 });
 
+/**=============================================
+ * LOG IN USER - 004
+ * =============================================
+ */
 const loginUser = catchAsync(async (req, res) => {
   const result = await AuthService.loginUserService(req.body);
 
@@ -62,6 +78,10 @@ const loginUser = catchAsync(async (req, res) => {
   });
 });
 
+/**===========================================
+ * GET CURRENT LOGGED-IN USER
+ *============================================
+ */
 const getMe = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: 200,
@@ -71,6 +91,10 @@ const getMe = catchAsync(async (req, res) => {
   });
 });
 
+/**===========================================
+ * REFRESH ACCESS TOKEN - 005
+ =============================================
+ */
 const refreshToken = catchAsync(async (req, res) => {
   const token = req.cookies.refreshToken;
 
@@ -87,6 +111,10 @@ const refreshToken = catchAsync(async (req, res) => {
   });
 });
 
+/**===========================================
+ *  LOGOUT USER
+ * ===========================================
+ */
 const logout = catchAsync(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
   if (!refreshToken) {
@@ -109,6 +137,10 @@ const logout = catchAsync(async (req, res) => {
   });
 });
 
+/**============================================
+ * SEND OTP - 006
+ * ============================================
+ */
 const sendOTP = catchAsync(async (req, res) => {
   const result = await AuthService.sendOTPService(req.body.email);
 
@@ -120,6 +152,10 @@ const sendOTP = catchAsync(async (req, res) => {
   });
 });
 
+/**=============================================
+ * VERIFY OTP - 007
+ * =============================================
+ */
 const verifyOTP = catchAsync(async (req, res) => {
   const { email, otp } = req.body;
 
@@ -133,6 +169,10 @@ const verifyOTP = catchAsync(async (req, res) => {
   });
 });
 
+/**============================================
+ * FORGOT PASSWORD - 008
+ * ============================================
+ */
 const forgotPassword = catchAsync(async (req, res) => {
   await AuthService.forgotPasswordService(req.body.email);
 
@@ -144,6 +184,10 @@ const forgotPassword = catchAsync(async (req, res) => {
   });
 });
 
+/**============================================
+ * RESET PASSWORD - 009
+ * ============================================
+ */
 const resetPassword = catchAsync(async (req, res) => {
   const { email, newPassword } = req.body;
   await AuthService.resetPasswordService(email, newPassword);
@@ -156,6 +200,30 @@ const resetPassword = catchAsync(async (req, res) => {
   });
 });
 
+/**============================================
+ * CHANGE PASSWORD - 010
+ * ============================================
+ */
+const changePassword = catchAsync(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  await AuthService.changePasswordService(
+    (req.user as JwtPayload).userId,
+    currentPassword,
+    newPassword,
+  );
+
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Password changed successfully.",
+    data: null,
+  });
+});
+
+/**============================================
+ * RESEND FORGOT PASSWORD OTP - 011
+ * ============================================
+ */
 const resendForgotPasswordOTP = catchAsync(async (req, res) => {
   await AuthService.resendForgotPasswordOTPService(req.body.email);
   sendResponse(res, {
@@ -177,6 +245,7 @@ export const AuthController = {
   sendOTP,
   verifyOTP,
   forgotPassword,
+  changePassword,
   resetPassword,
   resendForgotPasswordOTP,
 };
