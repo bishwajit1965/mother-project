@@ -1,10 +1,13 @@
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 
 const NavBar = () => {
   const { user, logout } = useAuth() as { user?: unknown; logout: () => void };
+  const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
+    navigate("/auth/login");
   };
 
   return (
