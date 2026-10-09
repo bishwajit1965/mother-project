@@ -67,7 +67,7 @@ const ResetPassword = () => {
         </h1>
       </div>
 
-      {message && <p className="text-green-500">{message}</p>}
+      {message && <p className="text-green-500 font-bold">{message}</p>}
 
       <form
         onSubmit={handleSubmit}

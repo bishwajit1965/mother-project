@@ -4,6 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import {
   LucideEye,
   LucideEyeClosed,
+  LucideHome,
   LucideKeyRound,
   LucideLogIn,
   LucideUsers,
@@ -135,14 +136,21 @@ const Login = () => {
           <div className="lg:flex grid items-center justify-between gap-2">
             <Link
               to="/auth/forgot-password"
-              className="m-0 text-sm text-indigo-500 hover:link flex items-center gap-0.5"
+              className="m-0 text-xs text-indigo-500 hover:link flex items-center gap-0.5"
             >
               Forgot Password ? <LucideKeyRound size={14} />
               Change
             </Link>{" "}
             <Link
+              to="/"
+              className="m-0 text-xs text-indigo-500 hover:link flex items-center gap-0.5"
+            >
+              <LucideHome size={14} />
+              Home
+            </Link>
+            <Link
               to="/auth/register"
-              className="m-0 text-sm text-indigo-500 hover:link flex items-center gap-0.5"
+              className="m-0 text-xs text-indigo-500 hover:link flex items-center gap-0.5"
             >
               <LucideUsers className="w-4 h-4" />
               Register
