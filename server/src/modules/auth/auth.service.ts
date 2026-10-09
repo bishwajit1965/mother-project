@@ -31,6 +31,8 @@ const registerUserService = async (payload: {
   name: string;
   email: string;
   password: string;
+  avatar?: string;
+  bio?: string;
 }) => {
   const existingUser = await User.isUserExistsByEmail(payload.email);
 
@@ -52,7 +54,12 @@ const registerUserService = async (payload: {
     EX: Number(OTP_EXPIRES_IN),
   });
 
-  await sendOTPEmail(user.email, otp);
+  try {
+    await sendOTPEmail(user.email, otp);
+  } catch (error) {
+    console.error("EMAIL ERROR:", error);
+    throw error;
+  }
 
   return result;
 };

@@ -2,9 +2,26 @@ import mongoose from "mongoose";
 import AppError from "../../errors/AppError.js";
 import { User } from "../auth/auth.model.js";
 import { USER_STATUS } from "../auth/auth.constant.js";
+import { redisClient } from "../../database/redis.js";
 
 const getAllUsersService = async () => {
+  // Redish cash
+  const cacheKey = "users:all";
+
+  const cachedUsers = await redisClient.get(cacheKey);
+
+  if (cachedUsers) {
+    console.log("CACHE HIT");
+    return JSON.parse(cachedUsers);
+  }
+
+  console.log("CACHE MISS");
+
   const users = await User.find({ isDeleted: false });
+
+  await redisClient.set(cacheKey, JSON.stringify(users), {
+    EX: 60, //60 seconds
+  });
 
   return users;
 };

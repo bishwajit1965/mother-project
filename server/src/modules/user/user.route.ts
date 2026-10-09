@@ -35,7 +35,7 @@ router.patch(
 );
 
 router.get(
-  "/",
+  "/users",
   authMiddleware,
   authorize(USER_ROLE.ADMIN),
   UserController.getAllUsers,

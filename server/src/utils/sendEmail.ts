@@ -19,7 +19,7 @@ export const sendEmail = async ({ to, subject, html }: SendEmailOptions) => {
   });
 
   await transporter.sendMail({
-    from: `"Mother Project" <${process.env.SMTP_EMAIL}>`,
+    from: `"Mother Project" <${process.env.SMTP_USER}>`,
     to,
     subject,
     html,

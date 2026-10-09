@@ -27,10 +27,10 @@ router.post(
 
 router.post("/refresh-token", AuthController.refreshToken);
 
-router.get("/users", async (_req, res) => {
-  const users = await User.find();
-  res.json(users);
-});
+// router.get("/users", async (_req, res) => {
+//   const users = await User.find();
+//   res.json(users);
+// });
 
 router.get("/me", authMiddleware, AuthController.getMe);
 
