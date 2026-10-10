@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
 import { LucideEdit, LucideTrash } from "lucide-react";
+import UserModal from "./UserModal.js";
 
 type User = {
   _id: string | number;
@@ -13,14 +14,15 @@ type User = {
 
 const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await axiosInstance.get("/auth/users");
-        if (response.data) {
-          setUsers(response.data);
-        }
-        console.log("Users data:", response.data);
+        setUsers(response.data.data);
+        console.log("Users data:", response.data.data);
       } catch (error) {
         console.error("Error fetching users:", error);
       }
@@ -28,6 +30,39 @@ const UsersPage = () => {
 
     fetchUsers();
   }, []);
+
+  const handleToggleModal = (userId?: string | number) => {
+    const user = userId ? chosenUser(userId) : null;
+    setSelectedUser(user);
+    setIsModalOpen((prev) => !prev);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedUser(null);
+    setIsModalOpen(false);
+  };
+
+  const chosenUser = (userId?: string | number): User | null => {
+    if (!userId) return null;
+    return users.find((user) => user._id === userId) ?? null;
+  };
+
+  const handleDelete = async (userId: string | number) => {
+    const confirmed = window.confirm("Delete this user?");
+
+    if (!confirmed) return;
+    try {
+      const response = await axiosInstance.patch(
+        `/users/${userId}/soft-delete`,
+      );
+
+      if (response.data.success) {
+        setUsers((prev) => prev.filter((user) => user._id !== userId));
+      }
+    } catch (error) {
+      console.error("Error in deleting user", error);
+    }
+  };
 
   return (
     <div>
@@ -53,8 +88,12 @@ const UsersPage = () => {
                 <td>
                   <div className="flex items-center gap-3">
                     <div className="avatar">
-                      <div className="mask mask-squircle h-12 w-12">
-                        <img src={user.avatar} alt={user.name} />
+                      <div className="mask mask-squircle h-12 w-12 cursor-pointer">
+                        <img
+                          src={user.avatar}
+                          alt={user.name}
+                          onClick={() => handleToggleModal(user._id)}
+                        />
                       </div>
                     </div>
                   </div>
@@ -68,13 +107,20 @@ const UsersPage = () => {
                     : "N/A"}
                 </td>
                 <td className="flex items-center gap-1">
-                  <button className="btn btn-sm btn-primary" title="Edit">
+                  <button
+                    className="btn btn-sm btn-primary"
+                    title="Edit"
+                    onClick={() => handleToggleModal(user._id)}
+                  >
                     <LucideEdit size={18} />
                   </button>
-                  <button className="btn btn-sm btn-secondary" title="Delete">
+                  <button
+                    onClick={() => handleDelete(user._id)}
+                    className="btn btn-sm btn-secondary"
+                    title="Delete"
+                  >
                     <LucideTrash size={18} />
                   </button>
-                  <div className="">{user._id}</div>
                 </td>
               </tr>
             ))}
@@ -91,8 +137,30 @@ const UsersPage = () => {
             </tr>
           </tfoot>
         </table>
+
+        {/* CRUD MODAL TO UPDATE */}
+        {isModalOpen && (
+          <UserModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            user={selectedUser}
+            onSubmit={() => {
+              const fetchUsers = async () => {
+                try {
+                  const response = await axiosInstance.get("/auth/users");
+                  setUsers(response.data.data);
+                } catch (error) {
+                  console.error("Error fetching users:", error);
+                }
+              };
+              setTimeout(() => {
+                setIsModalOpen(false);
+                fetchUsers();
+              }, 4500);
+            }}
+          />
+        )}
       </div>
-      <ul></ul>
     </div>
   );
 };

@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { User } from "./auth.model.js";
 import { AuthController } from "./auth.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import authorize from "../../middlewares/authorize.js";
@@ -27,12 +26,14 @@ router.post(
 
 router.post("/refresh-token", AuthController.refreshToken);
 
-// router.get("/users", async (_req, res) => {
-//   const users = await User.find();
-//   res.json(users);
-// });
-
 router.get("/me", authMiddleware, AuthController.getMe);
+
+router.get(
+  "/users",
+  authMiddleware,
+  authorize(USER_ROLE.ADMIN),
+  AuthController.getAllUsers,
+);
 
 router.get(
   "/admin-only",

@@ -2,10 +2,8 @@ import { JwtPayload } from "jsonwebtoken";
 import { redisClient } from "../../database/redis.js";
 import AppError from "../../errors/AppError.js";
 import catchAsync from "../../utils/catchAsync.js";
-
 import sendResponse from "../../utils/sendResponse.js";
 import verifyToken from "../../utils/verifyToken.js";
-
 import { AuthService } from "./auth.service.js";
 
 /**================================================
@@ -19,6 +17,20 @@ const registerUser = catchAsync(async (req, res) => {
     statusCode: 201,
     success: true,
     message: "Account created. Verify your email address.",
+    data: result,
+  });
+});
+
+/**===============================================
+ * GET ALL USERS SIGNED UP -
+ * ===============================================
+ */
+const getAllUsers = catchAsync(async (req, res) => {
+  const result = await AuthService.getAllRegisteredUsersService();
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Users fetched successfully.",
     data: result,
   });
 });
@@ -243,6 +255,7 @@ const logout = catchAsync(async (req, res) => {
 
 export const AuthController = {
   registerUser,
+  getAllUsers,
   verifyEmail,
   resendEmailVerificationOTP,
   loginUser,

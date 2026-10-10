@@ -64,6 +64,14 @@ const registerUserService = async (payload: {
   return result;
 };
 
+const getAllRegisteredUsersService = async () => {
+  const users = await User.find({ isDeleted: false });
+  if (!users) {
+    throw new AppError(404, "Users not found");
+  }
+  return users;
+};
+
 /**================================
  * EMAIL VERIFICATION SERVICE -002
  * ================================
@@ -526,6 +534,7 @@ const resendForgotPasswordOTPService = async (email: string) => {
 
 export const AuthService = {
   registerUserService,
+  getAllRegisteredUsersService,
   verifyEmailService,
   resendEmailVerificationOTPService,
   loginUserService,

@@ -12,7 +12,7 @@ const NavBar = () => {
 
   return (
     <div className="flex items-center justify-center bg-base-300 sticky top-0">
-      NavBar
+      Mother Project
       <ul className="menu menu-horizontal px-1">
         <li>
           <a href="/">Home</a>
