@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
 import { LucideEdit, LucideLoader, LucideTrash } from "lucide-react";
 import UserModal from "./UserModal.js";
+import Swal from "sweetalert2";
 
 type User = {
   _id: string | number;
@@ -59,9 +60,17 @@ const UsersPage = () => {
   };
 
   const handleDelete = async (userId: string | number) => {
-    const confirmed = window.confirm("Delete this user?");
+    const confirmed = await Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    });
 
-    if (!confirmed) return;
+    if (!confirmed.isConfirmed) return;
 
     try {
       const response = await axiosInstance.patch(
@@ -71,6 +80,11 @@ const UsersPage = () => {
       if (response.data.success) {
         setMessage("User soft deleted successfully!");
         setUsers((prev) => prev.filter((user) => user._id !== userId));
+        await Swal.fire({
+          title: "Deleted!",
+          text: "The user has been deleted.",
+          icon: "success",
+        });
       }
     } catch (error) {
       console.error("Error in deleting user", error);

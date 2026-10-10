@@ -1,6 +1,7 @@
 import { LucideEdit, LucideLoader, LucideXCircle } from "lucide-react";
 import { useState } from "react";
 import axiosInstance from "../../lib/axios.js";
+import Swal from "sweetalert2";
 
 type User = {
   _id: string | number;
@@ -61,6 +62,13 @@ const UserModal = ({
         payload,
       );
       if (response.data?.success) {
+        Swal.fire({
+          position: "top-end",
+          icon: "success",
+          title: "User has been updated!",
+          showConfirmButton: false,
+          timer: 1500,
+        });
         setMessage("User updated successfully!");
         onSubmit();
       }
