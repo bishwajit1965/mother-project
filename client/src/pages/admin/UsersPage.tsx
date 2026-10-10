@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { axiosInstance } from "../../lib/axios.js";
-import { LucideEdit, LucideTrash } from "lucide-react";
+import { LucideEdit, LucideLoader, LucideTrash } from "lucide-react";
 import UserModal from "./UserModal.js";
 
 type User = {
@@ -16,6 +16,7 @@ const UsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -51,12 +52,14 @@ const UsersPage = () => {
     const confirmed = window.confirm("Delete this user?");
 
     if (!confirmed) return;
+
     try {
       const response = await axiosInstance.patch(
         `/users/${userId}/soft-delete`,
       );
 
       if (response.data.success) {
+        setMessage("User soft deleted successfully!");
         setUsers((prev) => prev.filter((user) => user._id !== userId));
       }
     } catch (error) {
@@ -66,9 +69,16 @@ const UsersPage = () => {
 
   return (
     <div>
+      {message && (
+        <p className="text-blue-500 bg-blue-100 font-bold p-2 border border-blue-300 rounded-sm shadow flex items-center gap-1">
+          <LucideLoader className="animate-spin" size={16} /> {message}
+        </p>
+      )}
+
       <h1 className="text-2xl font-bold">
         Users List {users ? users.length : "N/A"}
       </h1>
+
       <div className="overflow-x-auto">
         <table className="table">
           <thead>
@@ -156,7 +166,7 @@ const UsersPage = () => {
               setTimeout(() => {
                 setIsModalOpen(false);
                 fetchUsers();
-              }, 4500);
+              }, 2000);
             }}
           />
         )}

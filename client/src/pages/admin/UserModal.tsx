@@ -46,11 +46,8 @@ const UserModal = ({
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
     const targetUser = user ?? selectedUser;
-
     if (!targetUser?._id) return;
-
     const payload = {
       name: formData.name,
       email: formData.email,
