@@ -32,6 +32,16 @@ const UsersPage = () => {
     fetchUsers();
   }, []);
 
+  useEffect(() => {
+    if (!message) return;
+
+    const timer = setTimeout(() => {
+      setMessage("");
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [message]);
+
   const handleToggleModal = (userId?: string | number) => {
     const user = userId ? chosenUser(userId) : null;
     setSelectedUser(user);
